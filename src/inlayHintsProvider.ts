@@ -25,11 +25,22 @@ async function getCodeLenses(document: vscode.TextDocument): Promise<vscode.Code
 export class InlineCodeLensInlayHintsProvider implements vscode.InlayHintsProvider {
     private _onDidChangeInlayHints: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     readonly onDidChangeInlayHints: vscode.Event<void> = this._onDidChangeInlayHints.event;
+    private disposables: vscode.Disposable[] = [];
 
     constructor() {
-        vscode.workspace.onDidChangeTextDocument(() => {
+        this.disposables.push(vscode.window.onDidChangeVisibleTextEditors(() => {
             this.refresh();
-        });
+        }));
+        this.disposables.push(vscode.workspace.onDidChangeTextDocument((e) => {
+            if (vscode.window.visibleTextEditors.some(editor => editor.document === e.document)) {
+                this.refresh();
+            }
+        }));
+    }
+
+    dispose() {
+        this.disposables.forEach(d => d.dispose());
+        this._onDidChangeInlayHints.dispose();
     }
 
     refresh(): void {
@@ -46,6 +57,26 @@ export class InlineCodeLensInlayHintsProvider implements vscode.InlayHintsProvid
             return [];
         }
 
+        const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+            'vscode.executeDocumentSymbolProvider',
+            document.uri
+        );
+
+        const functionsAndMethods: vscode.DocumentSymbol[] = [];
+        function collectFunctions(symbolList: vscode.DocumentSymbol[]) {
+            for (const symbol of symbolList) {
+                if (symbol.kind === vscode.SymbolKind.Constructor || symbol.kind === vscode.SymbolKind.Function || symbol.kind === vscode.SymbolKind.Method) {
+                    functionsAndMethods.push(symbol);
+                }
+                if (symbol.children) {
+                    collectFunctions(symbol.children);
+                }
+            }
+        }
+        if (symbols) {
+            collectFunctions(symbols);
+        }
+
         const inlayHints: vscode.InlayHint[] = [];
         const lensesByRange = new Map<string, vscode.CodeLens[]>();
 
@@ -58,7 +89,7 @@ export class InlineCodeLensInlayHintsProvider implements vscode.InlayHintsProvid
         });
 
         lensesByRange.forEach((lineLenses) => {
-            const lineEndPosition = document.lineAt(lineLenses[0].range.end.line).range.end;
+            const line = lineLenses[0].range;
             const titles = lineLenses.map(lens => lens.command?.title || "⤵️").join(' | ');
             const commandLinks = lineLenses.map(lens => {
                 if (!lens.command) return '';
@@ -78,7 +109,13 @@ export class InlineCodeLensInlayHintsProvider implements vscode.InlayHintsProvid
             const hoverMessage = new vscode.MarkdownString(commandLinks);
             hoverMessage.isTrusted = true;
 
-            const hint = new vscode.InlayHint(lineEndPosition, `  ${titles}`);
+            const isFunctionLine = functionsAndMethods.some(symbol => symbol.range.start.line === line.start.line);
+            let position = line.end;
+            if (isFunctionLine) {
+                position = document.lineAt(line.end.line).range.end;
+            }
+
+            const hint = new vscode.InlayHint(position, `  ${titles}`);
             hint.paddingLeft = true;
             hint.tooltip = hoverMessage;
             inlayHints.push(hint);

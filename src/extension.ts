@@ -26,6 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (providerName === 'Inlay Hints') {
 			const inlayHintsProvider = new InlineCodeLensInlayHintsProvider();
 			provider = vscode.languages.registerInlayHintsProvider({ scheme: 'file' }, inlayHintsProvider);
+			context.subscriptions.push(inlayHintsProvider);
 		} else {
 			provider = new DecorationProvider();
 		}

@@ -35,11 +35,11 @@ export class DecorationProvider {
     private disposables: vscode.Disposable[] = [];
 
     constructor() {
-        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-            if (editor) this.render();
+        this.disposables.push(vscode.window.onDidChangeVisibleTextEditors(() => {
+            this.render();
         }));
         this.disposables.push(vscode.workspace.onDidChangeTextDocument(event => {
-            if (event.document === vscode.window.activeTextEditor?.document) {
+            if (vscode.window.visibleTextEditors.some(e => e.document === event.document)) {
                 this.debouncedRender();
             }
         }));
@@ -51,10 +51,9 @@ export class DecorationProvider {
             clearTimeout(this.timeout);
         }
         this.disposables.forEach(d => d.dispose());
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
+        vscode.window.visibleTextEditors.forEach(editor => {
             editor.setDecorations(inlineCodelensDecoration, []);
-        }
+        });
     }
 
     private debouncedRender() {
@@ -66,9 +65,12 @@ export class DecorationProvider {
     }
 
     private async render() {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) return;
+        for (const editor of vscode.window.visibleTextEditors) {
+            await this.renderEditor(editor);
+        }
+    }
 
+    private async renderEditor(editor: vscode.TextEditor) {
         const lenses = await getCodeLenses(editor.document);
         if (!lenses || lenses.length === 0) {
             editor.setDecorations(inlineCodelensDecoration, []);
