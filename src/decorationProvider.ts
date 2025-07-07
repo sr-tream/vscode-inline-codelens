@@ -1,26 +1,5 @@
 import * as vscode from 'vscode';
-
-async function getCodeLenses(document: vscode.TextDocument): Promise<vscode.CodeLens[]> {
-    const limit = vscode.workspace.getConfiguration('inline-codelens').get<number>('limit', -1);
-
-    if (limit === -1) {
-        const allLenses = await vscode.commands.executeCommand<vscode.CodeLens[]>(
-            'vscode.executeCodeLensProvider',
-            document.uri
-        );
-        return vscode.commands.executeCommand<vscode.CodeLens[]>(
-            'vscode.executeCodeLensProvider',
-            document.uri,
-            allLenses.length
-        );
-    } else {
-        return vscode.commands.executeCommand<vscode.CodeLens[]>(
-            'vscode.executeCodeLensProvider',
-            document.uri,
-            limit
-        );
-    }
-}
+import { getCodeLenses, getFunctionsAndMethods, createLensCommand } from './common';
 
 const inlineCodelensDecoration = vscode.window.createTextEditorDecorationType({
     after: {
@@ -71,60 +50,19 @@ export class DecorationProvider {
     }
 
     private async renderEditor(editor: vscode.TextEditor) {
-        const lenses = await getCodeLenses(editor.document);
-        if (!lenses || lenses.length === 0) {
+        const lensesByRange = await getCodeLenses(editor.document);
+        if (!lensesByRange || lensesByRange.size === 0) {
             editor.setDecorations(inlineCodelensDecoration, []);
             return;
         }
 
-        const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-            'vscode.executeDocumentSymbolProvider',
-            editor.document.uri
-        );
-
-        const functionsAndMethods: vscode.DocumentSymbol[] = [];
-        function collectFunctions(symbolList: vscode.DocumentSymbol[]) {
-            for (const symbol of symbolList) {
-                if (symbol.kind === vscode.SymbolKind.Constructor || symbol.kind === vscode.SymbolKind.Function || symbol.kind === vscode.SymbolKind.Method) {
-                    functionsAndMethods.push(symbol);
-                }
-                if (symbol.children) {
-                    collectFunctions(symbol.children);
-                }
-            }
-        }
-        if (symbols) {
-            collectFunctions(symbols);
-        }
-
+        const functionsAndMethods = await getFunctionsAndMethods(editor.document);
         const decorations: vscode.DecorationOptions[] = [];
-        const lensesByRange = new Map<string, vscode.CodeLens[]>();
-
-        lenses.forEach(lens => {
-            const rangeKey = JSON.stringify(lens.range);
-            if (!lensesByRange.has(rangeKey)) {
-                lensesByRange.set(rangeKey, []);
-            }
-            lensesByRange.get(rangeKey)!.push(lens);
-        });
 
         lensesByRange.forEach((lineLenses) => {
             const line = lineLenses[0].range;
             const titles = lineLenses.map(lens => lens.command?.title || "⤵️").join(' | ');
-            const commandLinks = lineLenses.map(lens => {
-                if (!lens.command) return '';
-                const title = lens.command.title || "⤵️";
-                if (lens.command.command !== 'editor.action.showReferences') {
-                    return `[${title}](command:${lens.command.command}?${encodeURIComponent(JSON.stringify(lens.command.arguments || []))})`;
-                } else {
-                    const command = 'inline-codelens.showReferencesWrapper';
-                    const commandArgs = [
-                        lens.command.command,
-                        ...(lens.command.arguments || [])
-                    ];
-                    return `[${title}](command:${command}?${encodeURIComponent(JSON.stringify(commandArgs))})`;
-                }
-            }).join(' | ');
+            const commandLinks = lineLenses.map(createLensCommand).join(' | ');
 
             const hoverMessage = new vscode.MarkdownString(commandLinks);
             hoverMessage.isTrusted = true;
