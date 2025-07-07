@@ -9,10 +9,12 @@
     "type": "git",
     "url": "https://github.com/sr-tream/vscode-inline-codelens.git"
   },
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.63.0"
   },
   "categories": [
+    "Visualization",
     "Other"
   ],
   "activationEvents": [
