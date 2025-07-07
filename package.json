@@ -1,0 +1,64 @@
+{
+  "name": "inline-codelens",
+  "displayName": "Inline CodeLens",
+  "description": "Show codelens in current line",
+  "publisher": "sr-team",
+  "license": "MIT",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sr-tream/vscode-inline-codelens.git"
+  },
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Inline CodeLens",
+      "properties": {
+        "inline-codelens.limit": {
+          "type": "number",
+          "default": -1,
+          "description": "The maximum number of CodeLenses to show. -1 for no limit."
+        },
+        "inline-codelens.debounceDelay": {
+          "type": "number",
+          "default": 300,
+          "minimum": 50,
+          "description": "The debounce delay in milliseconds for refreshing CodeLenses on document change."
+        },
+        "inline-codelens.fontDecoration": {
+          "type": "string",
+          "default": "font-size: 0.75em;",
+          "description": "The CSS text decoration to apply to the inline CodeLenses."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.63.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
