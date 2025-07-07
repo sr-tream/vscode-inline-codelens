@@ -4,6 +4,11 @@ All notable changes to the "inline-codelens" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.3] - 2025-07-07
+
+### Changed
+- Use clickable inlay hints, instead of url in tooltip
+
 ## [0.0.2] - 2025-07-07
 
 ### Added

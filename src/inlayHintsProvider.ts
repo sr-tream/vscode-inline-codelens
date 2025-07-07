@@ -41,11 +41,14 @@ export class InlineCodeLensInlayHintsProvider implements vscode.InlayHintsProvid
 
         lensesByRange.forEach((lineLenses) => {
             const line = lineLenses[0].range;
-            const titles = lineLenses.map(lens => lens.command?.title || "⤵️").join(' | ');
-            const commandLinks = lineLenses.map(createLensCommand).join(' | ');
-
-            const hoverMessage = new vscode.MarkdownString(commandLinks);
-            hoverMessage.isTrusted = true;
+            const parts: vscode.InlayHintLabelPart[] = [];
+            lineLenses.forEach(lens => {
+                const title = lens.command?.title || "⤵️";
+                const part = new vscode.InlayHintLabelPart(` ${title} `);
+                part.command = lens.command;
+                part.tooltip = title;
+                parts.push(part);
+            });
 
             const isFunctionLine = functionsAndMethods.some(symbol => symbol.range.start.line === line.start.line);
             let position = line.end;
@@ -53,9 +56,9 @@ export class InlineCodeLensInlayHintsProvider implements vscode.InlayHintsProvid
                 position = document.lineAt(line.end.line).range.end;
             }
 
-            const hint = new vscode.InlayHint(position, `  ${titles}`);
+            const hint = new vscode.InlayHint(position, parts);
             hint.paddingLeft = true;
-            hint.tooltip = hoverMessage;
+            hint.paddingRight = true;
             inlayHints.push(hint);
         });
 
