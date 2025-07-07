@@ -4,7 +4,7 @@
   "description": "Show codelens in current line",
   "publisher": "sr-team",
   "license": "MIT",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/sr-tream/vscode-inline-codelens.git"
@@ -38,6 +38,15 @@
           "type": "string",
           "default": "font-size: 0.75em;",
           "description": "The CSS text decoration to apply to the inline CodeLenses."
+        },
+        "inline-codelens.provider": {
+          "type": "string",
+          "default": "Decorations",
+          "enum": [
+            "Decorations",
+            "Inlay Hints"
+          ],
+          "description": "The provider to use for displaying inline CodeLenses."
         }
       }
     }

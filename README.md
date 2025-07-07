@@ -1,5 +1,7 @@
 # Inline CodeLens README
 
+![Demo](demo.png)
+
 This extension displays CodeLenses inline, at the end of the line, providing a less intrusive way to view code information.
 
 ## Features
@@ -17,6 +19,7 @@ This extension contributes the following settings:
 * `inline-codelens.limit`: The maximum number of CodeLenses to show. Set to `-1` for no limit.
 * `inline-codelens.debounceDelay`: The debounce delay in milliseconds for refreshing CodeLenses on document change.
 * `inline-codelens.fontDecoration`: The CSS text decoration to apply to the inline CodeLenses.
+* `inline-codelens.provider`: The provider to use for displaying inline CodeLenses. Can be `Decorations` or `Inlay Hints`.
 
 ## Release Notes
 
